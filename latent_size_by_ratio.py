@@ -1,13 +1,13 @@
 # latent_size_by_ratio.py
 
+import torch
+
 class LatentSizeByRatio:
     """
-    Computes latent width and height based on an aspect ratio preset
-    or a custom ratio. The output can be constrained to be divisible
-    by a specific value (e.g. 8 or 16) for model compatibility.
+    Generates latent width, height and an empty LATENT
+    based on an aspect ratio preset or custom ratio.
     """
 
-    # ---- Ratio presets ----
     RATIO_PRESETS = {
         "1:1 (Square)": (1, 1),
         "4:3": (4, 3),
@@ -29,30 +29,17 @@ class LatentSizeByRatio:
                         "min": 256,
                         "max": 4096,
                         "step": 8,
-                        "tooltip": "Largest latent dimension before aspect ratio is applied",
                     },
                 ),
             },
             "optional": {
                 "custom_ratio_w": (
                     "INT",
-                    {
-                        "default": 1,
-                        "min": 1,
-                        "max": 64,
-                        "step": 1,
-                        "tooltip": "Used only when ratio preset is Custom",
-                    },
+                    {"default": 1, "min": 1, "max": 64},
                 ),
                 "custom_ratio_h": (
                     "INT",
-                    {
-                        "default": 1,
-                        "min": 1,
-                        "max": 64,
-                        "step": 1,
-                        "tooltip": "Used only when ratio preset is Custom",
-                    },
+                    {"default": 1, "min": 1, "max": 64},
                 ),
                 "divisible_by": (
                     "INT",
@@ -60,25 +47,32 @@ class LatentSizeByRatio:
                         "default": 8,
                         "min": 1,
                         "max": 64,
-                        "step": 1,
-                        "tooltip": "Force output to be divisible by this value (e.g. 8 or 16)",
+                        "tooltip": "Force output dimensions to be divisible by this value",
+                    },
+                ),
+                "batch_size": (
+                    "INT",
+                    {
+                        "default": 1,
+                        "min": 1,
+                        "max": 64,
+                        "tooltip": "Batch size for generated LATENT",
                     },
                 ),
             },
         }
 
-    RETURN_TYPES = ("INT", "INT")
-    RETURN_NAMES = ("latent_width", "latent_height")
+    RETURN_TYPES = ("INT", "INT", "LATENT")
+    RETURN_NAMES = ("width", "height", "latent")
     FUNCTION = "compute"
     CATEGORY = "LFGG / Latents"
 
-    # ---- Node description (shown in UI) ----
     DESCRIPTION = (
-        "Generates latent width and height from an aspect ratio.\n\n"
-        "• Choose a preset ratio or use Custom\n"
+        "Computes latent width and height from an aspect ratio.\n\n"
         "• base_size defines the largest dimension\n"
-        "• Output can be forced to be divisible by a specific value\n\n"
-        "Note: Output values are latent resolution, not final pixel size."
+        "• Supports preset or custom ratios\n"
+        "• Can generate an empty LATENT output directly\n"
+        "• Output is latent resolution, not pixel resolution"
     )
 
     def compute(
@@ -88,8 +82,9 @@ class LatentSizeByRatio:
         custom_ratio_w: int = 1,
         custom_ratio_h: int = 1,
         divisible_by: int = 8,
+        batch_size: int = 1,
     ):
-        # --- Resolve ratio ---
+        # ---- Resolve ratio ----
         if ratio_preset == "Custom":
             w_ratio = int(custom_ratio_w)
             h_ratio = int(custom_ratio_h)
@@ -98,7 +93,7 @@ class LatentSizeByRatio:
 
         ratio = w_ratio / h_ratio
 
-        # --- Compute dimensions ---
+        # ---- Compute dimensions ----
         if ratio >= 1.0:
             width = base_size
             height = int(round(base_size / ratio))
@@ -106,19 +101,27 @@ class LatentSizeByRatio:
             height = base_size
             width = int(round(base_size * ratio))
 
-        # --- Enforce divisibility ---
+        # ---- Enforce divisibility ----
         div = max(1, int(divisible_by))
         width = (width // div) * div
         height = (height // div) * div
 
-        return int(width), int(height)
+        # ---- Create empty LATENT ----
+        latent = {
+            "samples": torch.zeros(
+                (batch_size, 4, height // 8, width // 8),
+                device="cpu",
+            )
+        }
+
+        return int(width), int(height), latent
 
 
-# ---- ComfyUI registration ----
+# ---- Registration ----
 NODE_CLASS_MAPPINGS = {
-    "LatentSizeByRatio": LatentSizeByRatio,
+    "LfggLatentSizeByRatio": LatentSizeByRatio,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LatentSizeByRatio": "LFGG - Latent Size by Ratio",
+    "LfggLatentSizeByRatio": "LFGG Latent Size by Ratio",
 }
