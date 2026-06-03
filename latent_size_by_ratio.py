@@ -1,6 +1,30 @@
-# latent_size_by_ratio.py
+"""LatentSizeByRatio node implementation."""
+
+from __future__ import annotations
+
+import math
 
 import torch
+
+
+def _lcm(a: int, b: int) -> int:
+    if a <= 0 or b <= 0:
+        raise ValueError("lcm arguments must be positive integers")
+    return abs(a * b) // math.gcd(a, b)
+
+
+def _round_to_multiple(value: float, multiple: int, upper_bound: int | None = None) -> int:
+    snapped = int(round(value / multiple)) * multiple
+    if snapped < multiple:
+        snapped = multiple
+
+    if upper_bound is not None and snapped > upper_bound:
+        remainder = upper_bound % multiple
+        snapped = upper_bound if remainder == 0 else upper_bound - remainder
+        if snapped < multiple:
+            snapped = multiple
+
+    return snapped
 
 class LatentSizeByRatio:
     """
@@ -69,10 +93,10 @@ class LatentSizeByRatio:
 
     DESCRIPTION = (
         "Computes latent width and height from an aspect ratio.\n\n"
-        "• base_size defines the largest dimension\n"
-        "• Supports preset or custom ratios\n"
-        "• Can generate an empty LATENT output directly\n"
-        "• Output is latent resolution, not pixel resolution"
+        "- base_size defines the largest dimension (pixels)\n"
+        "- Supports preset or custom ratios\n"
+        "- Snaps to lcm(8, divisible_by) to keep LATENT valid\n"
+        "- Can generate an empty LATENT output directly"
     )
 
     def compute(
@@ -91,25 +115,37 @@ class LatentSizeByRatio:
         else:
             w_ratio, h_ratio = self.RATIO_PRESETS[ratio_preset]
 
+        if w_ratio <= 0 or h_ratio <= 0:
+            raise ValueError("Ratio values must be positive integers")
+
         ratio = w_ratio / h_ratio
+        base_size = int(base_size)
 
         # ---- Compute dimensions ----
         if ratio >= 1.0:
-            width = base_size
-            height = int(round(base_size / ratio))
+            scaled_width = float(base_size)
+            scaled_height = float(base_size) / ratio
+            upper_w = base_size
+            upper_h = None
         else:
-            height = base_size
-            width = int(round(base_size * ratio))
+            scaled_height = float(base_size)
+            scaled_width = float(base_size) * ratio
+            upper_w = None
+            upper_h = base_size
 
-        # ---- Enforce divisibility ----
         div = max(1, int(divisible_by))
-        width = (width // div) * div
-        height = (height // div) * div
+        multiple = _lcm(8, div)
+
+        width = _round_to_multiple(scaled_width, multiple, upper_w)
+        height = _round_to_multiple(scaled_height, multiple, upper_h)
+
+        batch = max(1, int(batch_size))
 
         # ---- Create empty LATENT ----
         latent = {
             "samples": torch.zeros(
-                (batch_size, 4, height // 8, width // 8),
+                (batch, 4, height // 8, width // 8),
+                dtype=torch.float32,
                 device="cpu",
             )
         }

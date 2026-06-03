@@ -18,7 +18,7 @@ Utility nodes that make it easier to keep Stable Diffusion workflows on-model wi
 | **LFGG Latent Size by Ratio** | `LFGG / Latents` | Turns an aspect-ratio preset (or custom values) plus a base size into width/height integers and an empty `LATENT`, honoring divisibility constraints and optional batching. | [`docs/latent_size_by_ratio.md`](docs/latent_size_by_ratio.md) |
 | **LFGG Image Resolution by Ratio** | `LFGG / Image` | Reads the size of an `IMAGE`, caps the longest edge to `base_size`, snaps to `lcm(8, divisible_by)`, and emits a zeroed latent plus original/new dimensions. | [`docs/image_resolution_by_ratio.md`](docs/image_resolution_by_ratio.md) |
 | **LFGG Pixel Budget Latent Size** | `LFGG / Image Size` | Preserves the aspect ratio from an `IMAGE` while scaling down so `width * height <= max_pixels`, returns the resized size, and allocates the matching latent tensor. | [`docs/pixel_budget_latent_size.md`](docs/pixel_budget_latent_size.md) |
-
+| **LFGG Prompt Library** | `LFGG / Text` | Browses prompt snippet files from a configurable folder (see `config.ini`) and emits the selected file contents as a `STRING`. | [`docs/prompt_library.md`](docs/prompt_library.md) |
 See [`docs/nodes.md`](docs/nodes.md) for a catalog-style overview.
 
 ## Typical Workflows
@@ -29,8 +29,10 @@ See [`docs/nodes.md`](docs/nodes.md) for a catalog-style overview.
 ## Development Notes
 - Follow the conventions documented in [`AGENTS.md`](AGENTS.md): snake_case module names, `Lfgg` IDs, `LFGG ...` display names, and category strings under `LFGG / ...`.
 - Export each module in `__init__.py`, keep `NODE_CLASS_MAPPINGS` and `NODE_DISPLAY_NAME_MAPPINGS` synchronized, and add docs in `docs/<module>.md` plus an entry in `docs/nodes.md`.
+- Frontend extensions (when needed) live under `web/` and are exposed to ComfyUI via `WEB_DIRECTORY` in `__init__.py`.
 - Validate ranges via `INPUT_TYPES` metadata (min/max/step/tooltips) instead of runtime asserts wherever possible.
 - Before shipping a change, verify it in ComfyUI and run a lightweight `python -m compileall .` to catch syntax errors.
+- If ComfyUI shows "Invalid workflow against zod schema: Invalid aux_id", ComfyUI-Manager is attaching `aux_id` from the first git remote it finds; make sure the first remote URL is parseable as `https://github.com/<owner>/<repo>` (or add a separate remote for that).
 
 ## Need Another Node?
 Use the checklist at the bottom of `AGENTS.md`:

@@ -1,7 +1,10 @@
 # LFGG Latent Size by Ratio
 
 ## Overview
-`LFGG Latent Size by Ratio` turns an aspect-ratio preset (or a custom ratio) plus a target base size into latent-space width/height values and an empty LATENT tensor. The node guarantees both dimensions are divisible by a user-selected value, making it ideal for workflows where downstream samplers or VAEs require strict multiples.
+`LFGG Latent Size by Ratio` turns an aspect-ratio preset (or a custom ratio) plus a target base size into pixel-space width/height values and an empty LATENT tensor. The node guarantees both dimensions are snapped to `lcm(8, divisible_by)`, keeping the emitted latent tensor consistent with the returned width/height.
+
+## UI Preview
+The node includes a ratio preview box. The inner frame updates live to match the selected aspect ratio (preset or custom), giving a quick visual confirmation before you render.
 
 ## Inputs
 | Name | Type | Required | Description |
@@ -23,7 +26,7 @@
 ## How It Works
 1. Resolve the width:height ratio either from the preset list or from the custom values.
 2. Use `base_size` as the maximum dimension and calculate the other side from the ratio.
-3. Round both dimensions down so they are divisible by `divisible_by`.
+3. Snap both dimensions to `lcm(8, divisible_by)` so the returned `width`/`height` always match the latent tensor size.
 4. Build an empty latent tensor with four channels and spatial size reduced by a factor of 8 (Stable Diffusion latent resolution).
 
 Because the latent tensor comes pre-sized, you can bypass additional `Empty Latent Image` nodes when you just need ratio control plus batching.
@@ -38,5 +41,5 @@ Because the latent tensor comes pre-sized, you can bypass additional `Empty Late
 ## Tips & Notes
 - Increasing `divisible_by` reduces resolution but guarantees compatibility with models that expect larger tile multiples.
 - `batch_size` changes only the latent tensor allocation; if you want multiple prompts per batch, coordinate with sampler settings as well.
-- The output dimensions are latent space values (1/8 of pixel space for SD1.x). Multiply by 8 if you need to display the equivalent pixel resolution in UI text.
+- The output dimensions are pixel-space `width`/`height` values (the latent tensor is 1/8 scale internally, as usual for Stable Diffusion).
 - Tensors are created on CPU; move them to GPU later in the graph if required by custom CUDA nodes.
