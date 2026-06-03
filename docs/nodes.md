@@ -5,3 +5,4 @@
 - **LFGG Prompt Library** - Browse stored prompt snippets under a configurable folder and emit the selected text to downstream nodes.
 - **LFGG Prompt Wildcard** - Expand inline `{a|b}` and `__file__` wildcards into randomized prompt text using a seed.
 - **LFGG Load LoRA (Path)** - Load a LoRA from a specific subfolder under `loras/` with a filtered dropdown.
+- **LFGG Model Name From Model** - Trace a `MODEL` connection back to a supported loader and emit the source filename stem as text.

@@ -6,6 +6,7 @@ from . import pixel_budget_latent_size
 from . import prompt_library
 from . import prompt_wildcard
 from . import lora_loader_by_path
+from . import model_name_from_model
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -24,6 +25,8 @@ NODE_CLASS_MAPPINGS.update(prompt_wildcard.NODE_CLASS_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(prompt_wildcard.NODE_DISPLAY_NAME_MAPPINGS)
 NODE_CLASS_MAPPINGS.update(lora_loader_by_path.NODE_CLASS_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(lora_loader_by_path.NODE_DISPLAY_NAME_MAPPINGS)
+NODE_CLASS_MAPPINGS.update(model_name_from_model.NODE_CLASS_MAPPINGS)
+NODE_DISPLAY_NAME_MAPPINGS.update(model_name_from_model.NODE_DISPLAY_NAME_MAPPINGS)
 
 WEB_DIRECTORY = "./web"
 
@@ -34,4 +37,5 @@ __all__ += getattr(pixel_budget_latent_size, "__all__", [])
 __all__ += getattr(prompt_library, "__all__", [])
 __all__ += getattr(prompt_wildcard, "__all__", [])
 __all__ += getattr(lora_loader_by_path, "__all__", [])
+__all__ += getattr(model_name_from_model, "__all__", [])
 __all__ += ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
